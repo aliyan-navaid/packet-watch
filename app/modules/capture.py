@@ -68,8 +68,9 @@ class Capture:
         if config.port not in range(0, 65536):
             raise AttributeError("Capture.__init__: invalid port")
         
+        config.interface = config.interface or self._get_active_interface()
+        
         self.config: CaptureConfig = config
-        self.config.interface = config.interface or self._get_active_interface()
         self.packets: List[Packet] = []
 
         self._capture: Optional[pyshark.LiveCapture] = None
