@@ -4,6 +4,7 @@ import threading
 import asyncio
 
 from app.utils.interfaces import Subject, Observer
+from app.utils.models import CaptureConfig
 from app.utils.events import Event
 
 from pyshark.tshark.tshark import get_all_tshark_interfaces_names
@@ -37,11 +38,11 @@ class Capture:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        bpf = self.protocol
-        if self.port:
-            bpf = f"{self.protocol} port {self.port}"
+        bpf = self.config.protocol
+        if self.config.port:
+            bpf = f"{self.config.protocol} port {self.config.port}"
 
-        self._capture = pyshark.LiveCapture(interface=self.interface, bpf_filter=bpf)
+        self._capture = pyshark.LiveCapture(interface=self.config.interface, bpf_filter=bpf)
 
         start_time = time.time()
         try:
@@ -63,13 +64,12 @@ class Capture:
             self._running = False
 
     # bonus - provide interface to save time
-    def __init__(self, protocol: str, port: int, interface: Optional[str] = None) -> None:
-        if port not in range(0, 65536):
+    def __init__(self, config: CaptureConfig) -> None:
+        if config.port not in range(0, 65536):
             raise AttributeError("Capture.__init__: invalid port")
-
-        self.protocol: str = protocol
-        self.port: int = port
-        self.interface = interface or self._get_active_interface()
+        
+        self.config: CaptureConfig = config
+        self.config.interface = config.interface or self._get_active_interface()
         self.packets: List[Packet] = []
 
         self._capture: Optional[pyshark.LiveCapture] = None
@@ -114,13 +114,14 @@ class Capture:
     def unsubscribe(self, observer:Observer):
         self.observers.remove(observer)
 
-    def notifyObservers(self, event: Event):
+    def notify_observers(self, event: Event):
         for observer in self.observers:
             pass
 
 if __name__ == '__main__':
     print('Start')
-    capture_tcp = Capture('ip', 0, 'Wi-Fi')
+    config: CaptureConfig = CaptureConfig('ip', 0, 'Wi-Fi')
+    capture_tcp = Capture(config)
     print('Created Capture')
     capture_tcp.start_capture(10)
     print('Capturing')

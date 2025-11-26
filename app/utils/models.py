@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 @dataclass
 class PacketData:
@@ -29,3 +30,4 @@ class QueryMessage:
 class CaptureConfig:
     protocol: str
     port: int
+    interface: Optional[str] = None
