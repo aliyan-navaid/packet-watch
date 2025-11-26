@@ -1,4 +1,4 @@
-from app.utils import PacketData, MetricsSnapshot, AlertInfo
+from app.utils import PacketData, MetricsSnapshot, AlertInfo, QueryMessage
 from typing import Union
 
 class Event:
@@ -17,3 +17,7 @@ class MetricsUpdatedEvent(Event):
 class AlertGeneratedEvent(Event):
     def __init__(self, alert_info: AlertInfo):
         super().__init__("alert_generated", alert_info)
+
+class QueryRaised(Event):
+    def __init__(self, query: QueryMessage):
+        super().__init__("query_raised", query)
