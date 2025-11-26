@@ -116,6 +116,7 @@ class Capture:
 
     def notifyObservers(self, event: Event):
         for observer in self.observers:
+            pass
 
 if __name__ == '__main__':
     print('Start')
