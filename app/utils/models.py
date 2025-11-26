@@ -20,3 +20,12 @@ class AlertInfo:
     message: str
     severity: str
     timestamp: float
+
+@dataclass
+class QueryMessage:
+    message: str
+
+@dataclass
+class CaptureConfig:
+    protocol: str
+    port: int
