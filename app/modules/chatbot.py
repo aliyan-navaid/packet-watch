@@ -1,2 +1,8 @@
+from app.utils import QueryMessage
+
 class Chatbot:
-    pass
+    def __init__(self):
+        pass
+
+    def processQuery(query: QueryMessage):
+        pass

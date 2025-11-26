@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+from app.utils.events import Event
 
 class Observer(ABC):
     @abstractmethod
-    def update(self):
+    def update(self, event:Event):
         pass
 
 class Subject(ABC):

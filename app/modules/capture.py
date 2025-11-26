@@ -3,6 +3,9 @@ import pyshark
 import threading
 import asyncio
 
+from app.utils.interfaces import Subject, Observer
+from app.utils.events import Event
+
 from pyshark.tshark.tshark import get_all_tshark_interfaces_names
 from pyshark.packet.packet import Packet
 
@@ -72,6 +75,8 @@ class Capture:
         self._capture: Optional[pyshark.LiveCapture] = None
         self._running: bool = False
         self._thread: Optional[threading.Thread] = None
+
+        self.observers: list[Observer] = [] # not handled yet
         
     def start_capture(self, timeout: int | None = None, total: int = 0) -> None:
         if self._running:
@@ -102,6 +107,15 @@ class Capture:
 
     def clear(self) -> None:
         self.packets.clear()
+
+    def subscribe(self, observer: Observer):
+        self.observers.append(observer)
+
+    def unsubscribe(self, observer:Observer):
+        self.observers.remove(observer)
+
+    def notifyObservers(self, event: Event):
+        for observer in self.observers:
 
 if __name__ == '__main__':
     print('Start')
