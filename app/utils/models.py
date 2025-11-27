@@ -22,7 +22,7 @@ class MetricsSnapshot:
 
     packet_rate: float = 0.0  # current packets/sec window
     peak_packet_rate: float = 0.0
-    throughput: float = 0.0  # backwards compatibility (bytes/sec)
+    throughput: float = 0.0  # (bytes/sec)
     throughput_bps: float = 0.0
 
     protocol_breakdown: Dict[str, int] = field(default_factory=dict)
@@ -54,4 +54,3 @@ class CaptureConfig:
     protocol: str
     port: int
     interface: Optional[str] = None
-    file_path: Optional[str] = None # saves in pcap only i.e. openable in wireshark - use Storage for json

@@ -59,9 +59,8 @@ class Metrics(Subject, Observer):
         self._ingest_packet(features)
         self._refresh_snapshot_views()
 
-        # push snapshot downstream for alert/gui consumers
-        self.notify_observers(MetricsUpdatedEvent(self.essential()))
-        print(self)
+        self.notify_observers(MetricsUpdatedEvent(self.get()))
+        print(self._metrics)
 
     def subscribe(self, observer: Observer):
         self.observers.append(observer)
@@ -74,7 +73,7 @@ class Metrics(Subject, Observer):
         for observer in list(self.observers):
             observer.update(event)
 
-    def essential(self) -> MetricsSnapshot:
+    def get(self) -> MetricsSnapshot:
         return self._metrics
 
     def _ingest_packet(self, features: _PacketFeatures) -> None:
@@ -209,7 +208,7 @@ class Metrics(Subject, Observer):
             frame = getattr(packet, "frame_info", None)
             if frame is not None:
                 length = self._safe_int(getattr(frame, "len", None))
-                
+
         if length is None:
             length = 0
 

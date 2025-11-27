@@ -44,7 +44,6 @@ class Capture(Subject):
         self._capture = pyshark.LiveCapture(
             interface = self.config.interface, 
             bpf_filter = bpf, 
-            output_file = self.config.file_path,
         )
 
         start_time = time.time()
