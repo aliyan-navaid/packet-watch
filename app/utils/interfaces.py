@@ -16,5 +16,5 @@ class Subject(ABC):
         pass
 
     @abstractmethod
-    def notifyObservers(self):
+    def notify_observers(self, event: Event):
         pass

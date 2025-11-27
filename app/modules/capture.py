@@ -1,19 +1,18 @@
 import time
 import pyshark
-import threading
 import asyncio
+import threading
 
 from app.utils.interfaces import Subject, Observer
+from app.utils.events import Event, PacketCapturedEvent
 from app.utils.models import CaptureConfig
-from app.utils.events import Event
 
 from pyshark.tshark.tshark import get_all_tshark_interfaces_names
 from pyshark.packet.packet import Packet
 
-from typing import List, Optional
-from pprint import pprint
+from typing import Optional
 
-class Capture:
+class Capture(Subject):
     @staticmethod
     def _get_active_interface(timeout: int = 3, bpf_filter: str = 'ip') -> str:
         pyshark_ifaces = get_all_tshark_interfaces_names()
@@ -30,10 +29,10 @@ class Capture:
      
         raise RuntimeError("No active interface found.")   
 
-    @staticmethod
-    def _handle_packet(packet: Packet) -> None:
-        print(packet)
-    
+    def _handle_packet(self, packet: Packet) -> None:
+        self.notify_observers(PacketCapturedEvent(packet))
+        #print(packet)
+
     def _sniff(self, timeout: int | None = None, total: int = 0) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -42,7 +41,11 @@ class Capture:
         if self.config.port:
             bpf = f"{self.config.protocol} port {self.config.port}"
 
-        self._capture = pyshark.LiveCapture(interface=self.config.interface, bpf_filter=bpf)
+        self._capture = pyshark.LiveCapture(
+            interface = self.config.interface, 
+            bpf_filter = bpf, 
+            output_file = self.config.file_path,
+        )
 
         start_time = time.time()
         try:
@@ -51,16 +54,16 @@ class Capture:
                 if not self._running:
                     break  # stop requested
                 self._handle_packet(packet)
-                self.packets.append(packet)
                 count += 1
                 if total > 0 and count >= total:
                     break
                 if timeout and (time.time() - start_time) >= timeout:
-                    break
+                    break   
         finally:
             if self._capture is not None:
                 self._capture.close()
                 self._capture = None
+
             self._running = False
 
     # bonus - provide interface to save time
@@ -71,15 +74,15 @@ class Capture:
         config.interface = config.interface or self._get_active_interface()
         
         self.config: CaptureConfig = config
-        self.packets: List[Packet] = []
 
         self._capture: Optional[pyshark.LiveCapture] = None
         self._running: bool = False
         self._thread: Optional[threading.Thread] = None
 
-        self.observers: list[Observer] = [] # not handled yet
+        self.observers: list[Observer] = [] 
+        self._obs_lock: threading.Lock = threading.Lock()
         
-    def start_capture(self, timeout: int | None = None, total: int = 0) -> None:
+    def start_capture(self, timeout: Optional[int] = None, total: int = 0) -> None:
         if self._running:
             return
 
@@ -106,25 +109,20 @@ class Capture:
             self._thread.join(timeout=2.0)
             self._thread = None
 
-    def clear(self) -> None:
-        self.packets.clear()
-
     def subscribe(self, observer: Observer):
-        self.observers.append(observer)
+        if not isinstance(observer, Observer):
+            raise TypeError('expected Observer, got', type(observer))
+        
+        with self._obs_lock:
+            self.observers.append(observer)
 
     def unsubscribe(self, observer:Observer):
-        self.observers.remove(observer)
+        with self._obs_lock:
+            self.observers.remove(observer)
 
     def notify_observers(self, event: Event):
-        for observer in self.observers:
-            pass
+        with self._obs_lock:
+            observer_copy = self.observers
 
-if __name__ == '__main__':
-    print('Start')
-    config: CaptureConfig = CaptureConfig('ip', 0, 'Wi-Fi')
-    capture_tcp = Capture(config)
-    print('Created Capture')
-    capture_tcp.start_capture(10)
-    print('Capturing')
-    capture_tcp.stop_capture(5)
-    print('Done')
+        for observer in observer_copy:
+            observer.update(event)

@@ -1,13 +1,14 @@
-from app.utils import PacketData, MetricsSnapshot, AlertInfo, QueryMessage
+from app.utils.models import MetricsSnapshot, AlertInfo, QueryMessage
+from pyshark.packet.packet import Packet
 from typing import Union
 
 class Event:
-    def __init__(self, name: str, payload: Union[PacketData, MetricsSnapshot, AlertInfo]):
+    def __init__(self, name: str, payload: Union[Packet, QueryMessage, MetricsSnapshot, AlertInfo]):
         self.name = name
         self.payload = payload
 
 class PacketCapturedEvent(Event):
-    def __init__(self, packet_data: PacketData):
+    def __init__(self, packet_data: Packet):
         super().__init__("packet_captured", packet_data)
 
 class MetricsUpdatedEvent(Event):

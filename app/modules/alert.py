@@ -15,6 +15,6 @@ class Alerts(Subject, Observer):
     def unsubscribe(self, observer:Observer):
         self.observers.remove(observer)
 
-    def notifyObservers(self, event: Event):
+    def notify_observers(self, event: Event):
         for observer in self.observers:
             observer.update(event)
