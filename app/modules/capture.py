@@ -82,6 +82,10 @@ class Capture(Subject):
         self._obs_lock: threading.Lock = threading.Lock()
         
     def start_capture(self, timeout: Optional[int] = None, total: int = 0) -> None:
+        """
+        :param timeout: run capture for given amount of seconds - default; run until `stop_capture()` is called
+        :param total: number of packets to capture - default; infinite 
+        """
         if self._running:
             return
 
@@ -93,7 +97,7 @@ class Capture(Subject):
         """
         Docstring for stop_capture
         
-        :param timeout: stop capture after given amount of seconds
+        :param timeout: stop capture after given amount of seconds - default; stop immediately 
         :type timeout: int
         """
         

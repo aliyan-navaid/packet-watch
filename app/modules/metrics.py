@@ -74,6 +74,9 @@ class Metrics(Subject, Observer):
             observer.update(event)
 
     def get(self) -> MetricsSnapshot:
+        """
+        Get Metrics
+        """
         return self._metrics
 
     def _ingest_packet(self, features: _PacketFeatures) -> None:

@@ -135,11 +135,15 @@ class Storage(Observer):
         NOT THREAD SAFE
     """
 
-    def __init__(self, file_path: Optional[str] = None, limit: Optional[int] = None):
+    def __init__(self, file_path: Optional[str] = None, capacity: Optional[int] = None):
+        """
+        :param file_path: provide a path to load packets from - default to empty list
+        :param capacity: total capacity of the storage 
+        """
         self._packets: List[StoredPacket] = []
-        if limit is not None and limit < 0:
+        if capacity is not None and capacity < 0:
             raise ValueError("limit must be greater than 0")
-        self._limit: Optional[int] = limit
+        self._capacity: Optional[int] = capacity
         self._file_path: Optional[Path] = Path(file_path) if file_path else None
         if file_path:
             self._load_from_file(file_path)
@@ -148,25 +152,31 @@ class Storage(Observer):
         if not isinstance(event, PacketCapturedEvent):
             raise TypeError("Storage only accepts PacketCapturedEvent")
 
-        if self._limit is not None and len(self._packets) >= self._limit:
+        if self._capacity is not None and len(self._packets) >= self._capacity:
             raise OverflowError("Packet storage capacity reached")
 
         packet: Packet = event.payload  # type: ignore
         self._packets.append(StoredPacket.from_packet(packet))
 
-    def update_limit(self, limit: int):
-        if limit < 0:
-            raise ValueError("limit must be greater than 0")
+    def update_limit(self, capacity: int):
+        """
+        Modify the capacity of storage
+        :param capacity: new capacity
+        """
+        if capacity < 0:
+            raise ValueError("capacity must be greater than 0")
         
-        self._limit = limit
-        if limit is None:
+        self._capacity = capacity
+        if capacity is None:
             return
 
-        if len(self._packets) > limit:
-            self._packets = self._packets[:limit]
+        if len(self._packets) > capacity:
+            self._packets = self._packets[:capacity]
 
     def materialize(self, file_path: Optional[str] = None) -> None:
-        """Write stored packets to disk as JSON."""
+        """Write stored packets to disk as JSON.
+        :param file_path: file path to save the materialized storage to
+        """
         target = Path(file_path) if file_path else self._file_path
         if target is None:
             raise ValueError("materialize requires a file path")
@@ -184,11 +194,14 @@ class Storage(Observer):
             raise ValueError("storage file must contain a JSON array")
         for record in data:
             stored = StoredPacket.from_dict(record)
-            if self._limit is not None and len(self._packets) >= self._limit:
+            if self._capacity is not None and len(self._packets) >= self._capacity:
                 break
             self._packets.append(stored)
 
     def clear(self):
+        """
+        Clears the storage, in-memory only, doesn't clear from disk
+        """
         self._packets.clear()
 
     def __getitem__(self, index: Union[int, slice]) -> Union[StoredPacket, List[StoredPacket]]:
@@ -218,7 +231,7 @@ class Storage(Observer):
     def insert(self, index: int, value: StoredPacket) -> None:
         if not isinstance(value, StoredPacket):
             raise TypeError("Only Packet instances can be inserted")
-        if self._limit is not None and len(self._packets) >= self._limit:
+        if self._capacity is not None and len(self._packets) >= self._capacity:
             raise OverflowError("Packet storage capacity reached")
         self._packets.insert(index, value)
 
@@ -226,4 +239,4 @@ class Storage(Observer):
         return iter(self._packets)
 
     def __repr__(self):
-        return f"Storage(limit={self._limit}, packets={self._packets})"
+        return f"Storage(limit={self._capacity}, packets={self._packets})"
