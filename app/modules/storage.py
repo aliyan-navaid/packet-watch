@@ -8,6 +8,7 @@ from app.utils.interfaces import Observer
 from app.utils.models import Packet
 from app.utils.events import Event, PacketCapturedEvent
 
+
 @dataclass
 class StoredPacket:
     timestamp: float
@@ -132,13 +133,13 @@ class StoredPacket:
 
 class Storage(Observer):
     """
-        NOT THREAD SAFE
+    NOT THREAD SAFE
     """
 
     def __init__(self, file_path: Optional[str] = None, capacity: Optional[int] = None):
         """
         :param file_path: provide a path to load packets from - default to empty list
-        :param capacity: total capacity of the storage 
+        :param capacity: total capacity of the storage
         """
         self._packets: List[StoredPacket] = []
         if capacity is not None and capacity < 0:
@@ -165,7 +166,7 @@ class Storage(Observer):
         """
         if capacity < 0:
             raise ValueError("capacity must be greater than 0")
-        
+
         self._capacity = capacity
         if capacity is None:
             return
@@ -204,9 +205,16 @@ class Storage(Observer):
         """
         self._packets.clear()
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[StoredPacket, List[StoredPacket]]:
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[StoredPacket, List[StoredPacket]]:
         return self._packets[index]
-    def __setitem__(self, index: Union[int, slice], value: Union[StoredPacket, Iterable[StoredPacket]]) -> None:
+
+    def __setitem__(
+        self,
+        index: Union[int, slice],
+        value: Union[StoredPacket, Iterable[StoredPacket]],
+    ) -> None:
         if isinstance(index, int):
             if not isinstance(value, StoredPacket):
                 raise TypeError("Only Packet instances can be assigned to an int index")

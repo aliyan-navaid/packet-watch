@@ -12,12 +12,13 @@ from pyshark.packet.packet import Packet
 
 from typing import Optional
 
+
 class Capture(Subject):
     @staticmethod
-    def _get_active_interface(timeout: int = 3, bpf_filter: str = 'ip') -> str:
+    def _get_active_interface(timeout: int = 3, bpf_filter: str = "ip") -> str:
         pyshark_ifaces = get_all_tshark_interfaces_names()
         for iface in pyshark_ifaces:
-            if 'Device' in iface: # avoiding windows GUIDs
+            if "Device" in iface:  # avoiding windows GUIDs
                 continue
             try:
                 capture = pyshark.LiveCapture(interface=iface, bpf_filter=bpf_filter)
@@ -26,12 +27,12 @@ class Capture(Subject):
                     return iface
             except Exception:
                 continue
-     
-        raise RuntimeError("No active interface found.")   
+
+        raise RuntimeError("No active interface found.")
 
     def _handle_packet(self, packet: Packet) -> None:
         self.notify_observers(PacketCapturedEvent(packet))
-        #print(packet)
+        # print(packet)
 
     def _sniff(self, timeout: int | None = None, total: int = 0) -> None:
         loop = asyncio.new_event_loop()
@@ -42,8 +43,8 @@ class Capture(Subject):
             bpf = f"{self.config.protocol} port {self.config.port}"
 
         self._capture = pyshark.LiveCapture(
-            interface = self.config.interface, 
-            bpf_filter = bpf, 
+            interface=self.config.interface,
+            bpf_filter=bpf,
         )
 
         start_time = time.time()
@@ -57,7 +58,7 @@ class Capture(Subject):
                 if total > 0 and count >= total:
                     break
                 if timeout and (time.time() - start_time) >= timeout:
-                    break   
+                    break
         finally:
             if self._capture is not None:
                 self._capture.close()
@@ -69,43 +70,45 @@ class Capture(Subject):
     def __init__(self, config: CaptureConfig) -> None:
         if config.port not in range(0, 65536):
             raise AttributeError("Capture.__init__: invalid port")
-        
+
         config.interface = config.interface or self._get_active_interface()
-        
+
         self.config: CaptureConfig = config
 
         self._capture: Optional[pyshark.LiveCapture] = None
         self._running: bool = False
         self._thread: Optional[threading.Thread] = None
 
-        self.observers: list[Observer] = [] 
+        self.observers: list[Observer] = []
         self._obs_lock: threading.Lock = threading.Lock()
-        
+
     def start_capture(self, timeout: Optional[int] = None, total: int = 0) -> None:
         """
         :param timeout: run capture for given amount of seconds - default; run until `stop_capture()` is called
-        :param total: number of packets to capture - default; infinite 
+        :param total: number of packets to capture - default; infinite
         """
         if self._running:
             return
 
         self._running = True
-        self._thread = threading.Thread(target=self._sniff, args=(timeout, total), daemon=False)
+        self._thread = threading.Thread(
+            target=self._sniff, args=(timeout, total), daemon=False
+        )
         self._thread.start()
 
     def stop_capture(self, timeout: int = 0) -> None:
         """
         Docstring for stop_capture
-        
-        :param timeout: stop capture after given amount of seconds - default; stop immediately 
+
+        :param timeout: stop capture after given amount of seconds - default; stop immediately
         :type timeout: int
         """
-        
+
         if not self._running:
             return
-        
+
         time.sleep(timeout)
-        
+
         self._running = False
 
         if self._thread is not None:
@@ -114,12 +117,12 @@ class Capture(Subject):
 
     def subscribe(self, observer: Observer):
         if not isinstance(observer, Observer):
-            raise TypeError('expected Observer, got', type(observer))
-        
+            raise TypeError("expected Observer, got", type(observer))
+
         with self._obs_lock:
             self.observers.append(observer)
 
-    def unsubscribe(self, observer:Observer):
+    def unsubscribe(self, observer: Observer):
         with self._obs_lock:
             self.observers.remove(observer)
 

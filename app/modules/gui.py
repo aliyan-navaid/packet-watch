@@ -1,12 +1,13 @@
 import PySimpleGUI as sg
-from app.utils import Event, PacketData, MetricsSnapshot, AlertInfo 
+from app.utils import Event, PacketData, MetricsSnapshot, AlertInfo
 from app.utils.interfaces import Subject, Observer
 from app.utils.events import Event
+
 
 class GUI(Observer):
     def __init__(self):
         pass
-    
+
     def run(self):
         pass
 
@@ -17,6 +18,6 @@ class GUI(Observer):
             pass
         elif isinstance(event, AlertInfo):
             pass
-        
-    def update(self, event:Event):
+
+    def update(self, event: Event):
         pass
