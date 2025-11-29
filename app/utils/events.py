@@ -22,3 +22,11 @@ class AlertGeneratedEvent(Event):
 class QueryRaised(Event):
     def __init__(self, query: QueryMessage):
         super().__init__("query_raised", query)
+
+class StartCaptureEvent(Event):
+    def __init__(self, config):
+        super().__init__("start_capture", config)
+
+class StopCaptureEvent(Event):
+    def __init__(self):
+        super().__init__("stop_capture", None)
