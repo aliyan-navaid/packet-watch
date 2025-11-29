@@ -99,3 +99,27 @@ Suggestions or improvements are welcome — feel free to open an issue or PR.
 - 2025-11-29: Timestamp type consistency
 	- Reason: Align alert timestamps across modules.
 	- Change: `AlertInfo.timestamp` uses `datetime` and alerts use `datetime.now()`.
+
+- 2025-11-29: GUI restyle and font palette
+	- Reason: Improve visual hierarchy and use user-preferred fonts for readability.
+	- Impact: New font palette (Open Sans / Noto Sans for UI, JetBrains/Fira/Roboto Mono for monospace), flatter card-style layout, updated colors and spacing.
+
+- 2025-11-29: Interface UX — psutil-backed active-interface picker
+	- Reason: Raw pyshark interface list is noisy and includes inactive/remote adapters.
+	- Impact: GUI lists friendly labels (e.g., "Ethernet (192.168.1.10)") for active interfaces only; hides verbose OS device names.
+
+- 2025-11-29: Resolve friendly label → real adapter before capture
+	- Reason: Users need simple names while pyshark requires real device identifiers.
+	- Impact: GUI builds mapping label→device_name and passes resolved name via CaptureConfig; Capture still falls back to auto-detect if none provided.
+
+- 2025-11-29: Protocol & port normalization for BPF filters
+	- Reason: BPF filter syntax is case-sensitive and port 0 semantics differ.
+	- Impact: Protocol values lowercased before building BPF filters; port 0 treated as "any port" by GUI and capture code.
+
+- 2025-11-29: Error reporting and safe fallbacks
+	- Reason: Improve user feedback when psutil/pyshark/tshark unavailable or interface invalid.
+	- Impact: Clearer UI alerts/log messages; fallback to Auto-detect mode when probe fails.
+
+- 2025-11-29: Race avoidance when starting capture from GUI
+	- Reason: Auto-detection during capture start could race with GUI selection and cause spurious "no active interface" errors.
+	- Impact: Controller now starts capture using the resolved CaptureConfig passed from GUI to avoid racey auto-detection.
