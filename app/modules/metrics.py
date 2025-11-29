@@ -60,7 +60,7 @@ class Metrics(Subject, Observer):
         self._refresh_snapshot_views()
 
         self.notify_observers(MetricsUpdatedEvent(self.get()))
-        print(self._metrics)
+        #print(self._metrics)
 
     def subscribe(self, observer: Observer):
         self.observers.append(observer)
