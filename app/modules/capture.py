@@ -18,8 +18,7 @@ class Capture(Subject):
     def _get_active_interface(timeout: int = 3, bpf_filter: str = "ip") -> str:
         pyshark_ifaces = get_all_tshark_interfaces_names()
         for iface in pyshark_ifaces:
-            if "Device" in iface:  # avoiding windows GUIDs
-                continue
+            # Removed "Device" check to support Windows NPF interfaces
             try:
                 capture = pyshark.LiveCapture(interface=iface, bpf_filter=bpf_filter)
                 capture.sniff(timeout=timeout)
@@ -67,13 +66,8 @@ class Capture(Subject):
             self._running = False
 
     # bonus - provide interface to save time
-    def __init__(self, config: CaptureConfig) -> None:
-        if config.port not in range(0, 65536):
-            raise AttributeError("Capture.__init__: invalid port")
-
-        config.interface = config.interface or self._get_active_interface()
-
-        self.config: CaptureConfig = config
+    def __init__(self, config: Optional[CaptureConfig] = None) -> None:
+        self.config: Optional[CaptureConfig] = config
 
         self._capture: Optional[pyshark.LiveCapture] = None
         self._running: bool = False
@@ -82,17 +76,30 @@ class Capture(Subject):
         self.observers: list[Observer] = []
         self._obs_lock: threading.Lock = threading.Lock()
 
-    def start_capture(self, timeout: Optional[int] = None, total: int = 0) -> None:
+    def start_capture(self, config: Optional[CaptureConfig] = None, timeout: Optional[int] = None, total: int = 0) -> None:
         """
+        :param config: Capture configuration (protocol, port, interface)
         :param timeout: run capture for given amount of seconds - default; run until `stop_capture()` is called
         :param total: number of packets to capture - default; infinite
         """
         if self._running:
             return
 
+        if config:
+            self.config = config
+        
+        if not self.config:
+            raise ValueError("No configuration provided for capture.")
+
+        if self.config.port not in range(0, 65536):
+             raise AttributeError("Capture: invalid port")
+
+        if not self.config.interface:
+             self.config.interface = self._get_active_interface()
+
         self._running = True
         self._thread = threading.Thread(
-            target=self._sniff, args=(timeout, total), daemon=False
+            target=self._sniff, args=(timeout, total), daemon=True
         )
         self._thread.start()
 
@@ -110,6 +117,12 @@ class Capture(Subject):
         time.sleep(timeout)
 
         self._running = False
+
+        if self._capture:
+            try:
+                self._capture.close()
+            except Exception:
+                pass
 
         if self._thread is not None:
             self._thread.join(timeout=2.0)
