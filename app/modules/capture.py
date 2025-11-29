@@ -38,7 +38,7 @@ class Capture(Subject):
         asyncio.set_event_loop(loop)
 
         bpf = self.config.protocol
-        if self.config.port:
+        if self.config.port and self.config.port > 0:
             bpf = f"{self.config.protocol} port {self.config.port}"
 
         self._capture = pyshark.LiveCapture(
@@ -92,10 +92,10 @@ class Capture(Subject):
             raise ValueError("No configuration provided for capture.")
 
         if self.config.port not in range(0, 65536):
-             raise AttributeError("Capture: invalid port")
+            raise AttributeError("Capture: invalid port")
 
         if not self.config.interface:
-             self.config.interface = self._get_active_interface()
+            self.config.interface = self._get_active_interface()
 
         self._running = True
         self._thread = threading.Thread(

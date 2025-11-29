@@ -49,8 +49,19 @@ class Controller(Observer):
             elif isinstance(event, QueryRaised):
                 self.process_query(event.payload)
         except Exception as e:
-            print(f"Controller Error: {e}")
-            # In a real app, we would emit an ErrorEvent here to notify the GUI
+            error_msg = f"Controller Error: {e}"
+            print(error_msg)
+            # Send error to GUI logs
+            from app.utils.models import AlertInfo
+            from datetime import datetime
+            alert = AlertInfo(
+                alert_type="error",
+                message=str(e),
+                severity="ERROR",
+                timestamp=datetime.now()
+            )
+            from app.utils.events import AlertGeneratedEvent
+            self.gui.update(AlertGeneratedEvent(alert))
 
     def process_query(self, query: QueryMessage):
         self.chatbot.processQuery(query)
