@@ -1,12 +1,13 @@
 from app.controller import Controller
-from app.modules import Alerts, Capture, Chatbot, GUI, Metrics
+from app.modules import Alerts, Capture, Chatbot, GUI, Metrics, Storage
 
 if __name__=="__main__":
-    alerts, capturer, chatbot, gui, metrics \
-    = Alerts(), Capture(), Chatbot(), GUI(), Metrics()
+    alerts, capturer, gui, metrics, storage = Alerts(), Capture(), GUI(), Metrics(), Storage()
+    chatbot = Chatbot(metrics, alerts, gui, storage)
 
     capturer.subscribe(metrics)
     capturer.subscribe(gui)
+    capturer.subscribe(storage)
     metrics.subscribe(alerts)
     metrics.subscribe(gui)
     alerts.subscribe(gui)

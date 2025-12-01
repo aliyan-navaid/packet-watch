@@ -41,9 +41,11 @@ class StoredPacket:
         timestamp = cls._extract_timestamp(packet)
         captured_length = cls._extract_length(packet)
         highest_layer = getattr(packet, "highest_layer", "") or ""
-        summary = getattr(packet, "summary", None)
-        if not summary:
-            summary = str(packet)
+        
+        raw_summary = str(packet)
+        summary_lines = raw_summary.splitlines()
+        clean_summary = summary_lines[0] if summary_lines else "No summary available"
+        
         src_ip = cls._extract_ip(packet, "src")
         dst_ip = cls._extract_ip(packet, "dst")
         src_port, dst_port = cls._extract_ports(packet)
@@ -51,7 +53,7 @@ class StoredPacket:
             timestamp=timestamp,
             captured_length=captured_length,
             highest_layer=highest_layer,
-            summary=str(summary),
+            summary=clean_summary,
             src_ip=src_ip,
             dst_ip=dst_ip,
             src_port=src_port,

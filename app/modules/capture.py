@@ -6,8 +6,9 @@ import threading
 from app.utils.interfaces import Subject, Observer
 from app.utils.events import Event, PacketCapturedEvent
 from app.utils.models import CaptureConfig
+from app.config import SystemConfig
 
-from pyshark.tshark.tshark import get_all_tshark_interfaces_names
+from pyshark.tshark.tshark import get_tshark_interfaces
 from pyshark.packet.packet import Packet
 
 from typing import Optional
@@ -16,18 +17,21 @@ from typing import Optional
 class Capture(Subject):
     @staticmethod
     def _get_active_interface(timeout: int = 3, bpf_filter: str = "ip") -> str:
-        pyshark_ifaces = get_all_tshark_interfaces_names()
+        try:
+            pyshark_ifaces = get_tshark_interfaces(tshark_path=SystemConfig.TSHARK_PATH)
+        except Exception:
+            pyshark_ifaces = []
+
         for iface in pyshark_ifaces:
-            # Removed "Device" check to support Windows NPF interfaces
             try:
-                capture = pyshark.LiveCapture(interface=iface, bpf_filter=bpf_filter)
+                capture = pyshark.LiveCapture(interface=iface, bpf_filter=bpf_filter, tshark_path=SystemConfig.TSHARK_PATH)
                 capture.sniff(timeout=timeout)
                 if len(capture) > 0:
                     return iface
             except Exception:
                 continue
 
-        raise RuntimeError("No active interface found.")
+        raise RuntimeError("No active interface found. Ensure Wireshark is installed and TShark is accessible.")
 
     def _handle_packet(self, packet: Packet) -> None:
         self.notify_observers(PacketCapturedEvent(packet))
@@ -44,6 +48,7 @@ class Capture(Subject):
         self._capture = pyshark.LiveCapture(
             interface=self.config.interface,
             bpf_filter=bpf,
+            tshark_path=SystemConfig.TSHARK_PATH,
         )
 
         start_time = time.time()

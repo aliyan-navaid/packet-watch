@@ -1,4 +1,10 @@
 from dataclasses import dataclass, field
+import os
+
+@dataclass
+class SystemConfig:
+    # Update this path if Wireshark in different location
+    TSHARK_PATH = r"C:\Applications\Wireshark\tshark.exe"
 
 @dataclass
 class MetricConfig:
