@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Tuple
+from datetime import datetime
 
 from pyshark.packet.packet import Packet
 
@@ -43,7 +44,7 @@ class AlertInfo:
     alert_type: str
     message: str
     severity: str
-    timestamp: float
+    timestamp: datetime
 
 @dataclass
 class QueryMessage:

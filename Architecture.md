@@ -3,21 +3,28 @@
 ## 1. Controller Component
 
 ### 1.1 Role
-The Controller serves as the primary orchestrator of the system. It mediates all user-driven actions and coordinates interactions between the Capture Module and ChatBot.
+The Controller serves as the primary orchestrator of the system. It mediates all user-driven actions and coordinates interactions between the Capture Module and ChatBot. The Controller observes GUI-emitted events and processes them in a background thread.
 
 ### 1.2 Responsibilities
-- Forward user-initiated commands from the GUI to the appropriate modules.
+- Observe GUI events and translate them into module actions.
+- Forward user-initiated commands to the appropriate modules.
 - Route pre-determined user queries to the ChatBot.
 
 ### 1.3 Interfaces
+**Events In (from GUI):**
+- `start_capture(CaptureConfig)`
+- `stop_capture()`
+- `query_raised(QueryMessage)`
+
 **Commands Out (to Capture Module):**
-- `start_capture(protocol, port)`
+- `start_capture(config: CaptureConfig)`
 - `stop_capture()`
 
 **Queries to ChatBot:**
 - `process_query(text)`
 
 ### 1.4 Relationships
+- **Controller ← GUI:** Receives events (user intent).
 - **Controller → Capture Module:** Issues operational directives.
 - **Controller ↔ ChatBot:** Sends queries.
 
@@ -28,7 +35,7 @@ The Controller serves as the primary orchestrator of the system. It mediates all
 The Capture Module is responsible for real-time acquisition of network packets according to the parameters specified by the Controller.
 
 ### 2.2 Responsibilities
-- Capture network packets filtered by protocol and port.
+- Capture network packets filtered by protocol and port (configured dynamically via `CaptureConfig`).
 - Emit packet capture events for downstream processing.
 
 ### 2.3 Events Produced
@@ -92,12 +99,12 @@ Represents high latency, traffic spike, or any threshold violation.
 ## 5. GUI Module
 
 ### 5.1 Role
-The GUI Module provides the visual user interface for real-time monitoring, data inspection, and interactive querying.
+The GUI Module provides the visual user interface for real-time monitoring, data inspection, and interactive querying. It acts as a Boundary in the ECB pattern and is both a Subject (publishes user intent) and an Observer (renders system updates).
 
 ### 5.2 Responsibilities
 - Display capture status, live metrics, and active alerts.
 - Present chatbot responses to user queries.
-- Forward user commands (start/stop capture, chatbot queries) to the Controller.
+- Publish user intent via events (start/stop capture, chatbot queries) to decouple from Controller.
 
 ### 5.3 Events Consumed
 - `metrics_updated`
@@ -112,7 +119,7 @@ The GUI Module provides the visual user interface for real-time monitoring, data
 - From Controller: `packet_captured`
 
 **Sends:**
-- To Controller: UI actions (start/stop capture, chatbot query submission)
+- To Controller: User intent via events (`start_capture`, `stop_capture`, `query_raised`)
 
 
 ## 6. ChatBot Component
@@ -135,3 +142,17 @@ ChatBot interacts with modules through synchronous data-access methods such as:
 - `gui.update()`
 
 *Note: ChatBot does not participate in the observer event stream.*
+
+## 7. Concurrency & Shutdown
+
+- GUI runs on the main thread (CustomTkinter mainloop).
+- Controller runs in a background thread, receiving GUI events via a thread-safe queue.
+- Capture runs in its own daemon thread; `stop_capture()` force-closes pyshark capture to break blocking reads.
+- On GUI close, the Controller is stopped and the app exits cleanly.
+
+## 8. Decision Log (High-Level)
+
+- 2025-11-29: Adopt CustomTkinter and `grid` for responsive GUI layout.
+- 2025-11-29: Introduce event-driven GUI→Controller communication (Boundary as Subject).
+- 2025-11-29: Implement graceful shutdown; daemonize capture thread and force-close pyshark on stop.
+- 2025-11-29: Support Windows NPF interfaces by not filtering names containing "Device".

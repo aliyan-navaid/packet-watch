@@ -10,12 +10,14 @@ from app.utils.models import Packet
 
 from app.config import MetricConfig
 
+
 @dataclass
 class _WindowEntry:
     timestamp: float
     length: int
     is_syn: bool
     is_rst: bool
+
 
 @dataclass
 class _PacketFeatures:
@@ -30,6 +32,7 @@ class _PacketFeatures:
     is_rst: bool
     is_error: bool
     tcp_flags: Dict[str, bool]
+
 
 class Metrics(Subject, Observer):
     def __init__(self) -> None:
@@ -92,7 +95,9 @@ class Metrics(Subject, Observer):
         # min/max packet length
         if length > self._metrics.max_packet_size:
             self._metrics.max_packet_size = length
-        if self._metrics.min_packet_size is None or (length and length < self._metrics.min_packet_size):
+        if self._metrics.min_packet_size is None or (
+            length and length < self._metrics.min_packet_size
+        ):
             self._metrics.min_packet_size = length
 
         # latency based on sniff timestamp
@@ -175,9 +180,13 @@ class Metrics(Subject, Observer):
 
     def _refresh_snapshot_views(self) -> None:
         self._metrics.protocol_breakdown = dict(
-            sorted(self._protocol_counts.items(), key=lambda item: item[1], reverse=True)
+            sorted(
+                self._protocol_counts.items(), key=lambda item: item[1], reverse=True
+            )
         )
-        self._metrics.top_source_ips = self._top_items(self._src_ip_bytes.items(), MetricConfig.TOP_N_TALKERS)
+        self._metrics.top_source_ips = self._top_items(
+            self._src_ip_bytes.items(), MetricConfig.TOP_N_TALKERS
+        )
         self._metrics.top_destination_ips = self._top_items(
             self._dst_ip_bytes.items(), MetricConfig.TOP_N_TALKERS
         )
@@ -190,9 +199,12 @@ class Metrics(Subject, Observer):
         self._metrics.tcp_flag_counts = dict(self._tcp_flag_counts)
 
         self._metrics.anomaly_indicators = {
-            "high_packet_rate": self._metrics.packet_rate > MetricConfig.HIGH_PACKET_RATE_THRESHOLD,
-            "high_throughput": self._metrics.throughput_bps > MetricConfig.HIGH_THROUGHPUT_BPS,
-            "syn_flood_suspected": self._metrics.syn_rate > MetricConfig.HIGH_SYN_RATE_THRESHOLD,
+            "high_packet_rate": self._metrics.packet_rate
+            > MetricConfig.HIGH_PACKET_RATE_THRESHOLD,
+            "high_throughput": self._metrics.throughput_bps
+            > MetricConfig.HIGH_THROUGHPUT_BPS,
+            "syn_flood_suspected": self._metrics.syn_rate
+            > MetricConfig.HIGH_SYN_RATE_THRESHOLD,
             "rst_spike": self._metrics.rst_rate > MetricConfig.HIGH_RST_RATE_THRESHOLD,
         }
 
@@ -203,8 +215,7 @@ class Metrics(Subject, Observer):
     def _extract_packet_features(self, packet: Packet) -> _PacketFeatures:
         timestamp = self._extract_timestamp(packet)
         length = self._safe_int(
-            getattr(packet, "captured_length", None)
-            or getattr(packet, "length", None)
+            getattr(packet, "captured_length", None) or getattr(packet, "length", None)
         )
 
         if length is None or length == 0:
@@ -232,17 +243,17 @@ class Metrics(Subject, Observer):
         is_error = self._is_error_packet(packet, protocol)
 
         return _PacketFeatures(
-            timestamp = timestamp,
-            length = length,
-            protocol = protocol,
-            src_ip = src_ip,
-            dst_ip = dst_ip,
-            src_port = src_port,
-            dst_port = dst_port,
-            is_syn = is_syn,
-            is_rst = is_rst,
-            is_error = is_error,
-            tcp_flags = tcp_flags,
+            timestamp=timestamp,
+            length=length,
+            protocol=protocol,
+            src_ip=src_ip,
+            dst_ip=dst_ip,
+            src_port=src_port,
+            dst_port=dst_port,
+            is_syn=is_syn,
+            is_rst=is_rst,
+            is_error=is_error,
+            tcp_flags=tcp_flags,
         )
 
     @staticmethod
@@ -267,7 +278,7 @@ class Metrics(Subject, Observer):
             value = getattr(layer, attr, None)
             if value:
                 return value
-            
+
         return None
 
     def _extract_ports(self, packet: Packet) -> Tuple[Optional[int], Optional[int]]:
@@ -276,7 +287,7 @@ class Metrics(Subject, Observer):
 
             if layer is None:
                 continue
-            
+
             src = self._safe_int(
                 getattr(layer, "srcport", None)
                 or getattr(layer, "sport", None)
@@ -290,9 +301,9 @@ class Metrics(Subject, Observer):
                 or getattr(layer, "dst_port", None),
                 default=None,
             )
-            
+
             return src, dst
-        
+
         return None, None
 
     @staticmethod

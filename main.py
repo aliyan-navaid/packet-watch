@@ -12,4 +12,15 @@ if __name__=="__main__":
     alerts.subscribe(gui)
 
     controller = Controller(capturer, chatbot, gui)
+    
+    # Subscribe Controller to GUI events (User Actions)
+    gui.subscribe(controller)
+    
+    # Start Controller (Background Thread)
     controller.start()
+    
+    # Start GUI (Main Thread - Blocking)
+    gui.run()
+
+    # Stop Controller when GUI closes
+    controller.stop()
